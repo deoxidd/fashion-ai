@@ -1,0 +1,36 @@
+{
+  "generated_at": "2026-04-24T13:10:52.494878",
+  "source_image": "test_photo.jpg",
+  "body": {
+    "shape": "Inverted Triangle",
+    "shape_description": "Shoulders wider than hips",
+    "proportion": "Long-legged",
+    "measurements_normalized": {
+      "shoulder_width": 0.408,
+      "hip_width": 0.271,
+      "torso_length": 0.261,
+      "leg_length": 0.445,
+      "arm_length": 0.318,
+      "total_height": 0.864
+    },
+    "ratios": {
+      "shoulder_to_hip": 1.51,
+      "torso_to_leg": 0.59,
+      "shoulder_to_height": 0.47
+    }
+  },
+  "skin": {
+    "depth": "Light-Medium",
+    "undertone": "Warm",
+    "rgb": [
+      173,
+      134,
+      107
+    ],
+    "lab": [
+      150,
+      139,
+      148
+    ]
+  }
+}

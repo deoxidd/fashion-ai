@@ -1,0 +1,45 @@
+id,name,category,subcategory,color,color_family,undertone_match,fit,tags,price,brand,url
+1,Cream Essential Tee,tops,t-shirt,cream,warm-white,warm,slim,"minimalist,muted,tailored,everyday",29.99,Uniqlo,https://example.com/1
+2,Olive Henley,tops,henley,olive,green,warm,slim,"muted,tailored,workwear,everyday",45.00,Everlane,https://example.com/2
+3,Rust Oversized Tee,tops,t-shirt,rust,orange,warm,relaxed,"bold,relaxed,streetwear,everyday",34.99,H&M,https://example.com/3
+4,Camel V-Neck,tops,t-shirt,camel,brown,warm,slim,"muted,tailored,prep,everyday",39.99,J.Crew,https://example.com/4
+5,Mustard Sweatshirt,tops,sweatshirt,mustard,yellow,warm,relaxed,"bold,relaxed,streetwear,vintage",59.99,Uniqlo,https://example.com/5
+6,White Minimal Tee,tops,t-shirt,white,neutral,cool,slim,"minimalist,tailored,everyday",24.99,COS,https://example.com/6
+7,Navy Oxford Shirt,tops,button-up,navy,blue,cool,slim,"minimalist,tailored,prep,office",69.99,Uniqlo,https://example.com/7
+8,Charcoal Crew Neck,tops,t-shirt,charcoal,gray,neutral,slim,"minimalist,muted,tailored,everyday",29.99,Everlane,https://example.com/8
+9,Black Graphic Tee,tops,t-shirt,black,neutral,neutral,relaxed,"bold,relaxed,streetwear,going-out",39.99,Stussy,https://example.com/9
+10,Burgundy Henley,tops,henley,burgundy,red,warm,slim,"muted,tailored,vintage,everyday",49.99,J.Crew,https://example.com/10
+11,Emerald Polo,tops,polo,emerald,green,cool,slim,"bold,tailored,prep,office",55.00,Lacoste,https://example.com/11
+12,Terracotta Overshirt,tops,shirt,terracotta,orange,warm,relaxed,"bold,relaxed,workwear,vintage",89.99,Everlane,https://example.com/12
+13,Performance Black Tee,tops,t-shirt,black,neutral,neutral,slim,"minimalist,tailored,athleisure,gym",34.99,Nike,https://example.com/13
+14,Gray Performance Tee,tops,t-shirt,gray,neutral,neutral,slim,"minimalist,tailored,athleisure,gym",34.99,Nike,https://example.com/14
+15,Black Techwear Tee,tops,t-shirt,black,neutral,neutral,relaxed,"minimalist,relaxed,techwear,going-out",49.99,ACRONYM,https://example.com/15
+16,Dark Slim Jeans,bottoms,jeans,dark-blue,blue,neutral,slim-straight,"minimalist,tailored,everyday",79.99,Levi's,https://example.com/16
+17,Black Straight Jeans,bottoms,jeans,black,neutral,neutral,straight,"minimalist,tailored,everyday,going-out",79.99,Levi's,https://example.com/17
+18,Olive Cargo Pants,bottoms,cargo,olive,green,warm,tapered,"muted,tapered,workwear,streetwear,everyday",89.99,Carhartt,https://example.com/18
+19,Black Tapered Cargos,bottoms,cargo,black,neutral,neutral,tapered,"bold,tapered,streetwear,techwear",79.99,H&M,https://example.com/19
+20,Navy Chinos,bottoms,chinos,navy,blue,cool,slim-straight,"minimalist,tailored,prep,office",69.99,J.Crew,https://example.com/20
+21,Camel Chinos,bottoms,chinos,camel,brown,warm,slim-straight,"muted,tailored,prep,everyday",69.99,J.Crew,https://example.com/21
+22,Skinny Black Jeans,bottoms,jeans,black,neutral,neutral,skinny,"bold,tailored,grunge,going-out",69.99,H&M,https://example.com/22
+23,Black Joggers,bottoms,joggers,black,neutral,neutral,tapered,"minimalist,tapered,athleisure,gym",54.99,Nike,https://example.com/23
+24,Gray Joggers,bottoms,joggers,gray,neutral,neutral,tapered,"minimalist,tapered,athleisure,gym",49.99,Nike,https://example.com/24
+25,Wide Leg Trousers,bottoms,trousers,charcoal,gray,neutral,wide,"bold,relaxed,workwear,office",99.99,COS,https://example.com/25
+26,Brown Workwear Pants,bottoms,chinos,brown,brown,warm,relaxed,"muted,relaxed,workwear,vintage",85.00,Dickies,https://example.com/26
+27,White Minimal Sneakers,shoes,sneaker,white,neutral,neutral,slim,"minimalist,tailored,prep,everyday",110.00,Common Projects,https://example.com/27
+28,Cream Chunky Sneakers,shoes,sneaker,cream,warm-white,warm,chunky,"muted,relaxed,streetwear,everyday",129.99,New Balance,https://example.com/28
+29,Black Running Shoes,shoes,sneaker,black,neutral,neutral,athletic,"minimalist,athleisure,gym",139.99,Nike,https://example.com/29
+30,Brown Leather Loafers,shoes,loafer,brown,brown,warm,slim,"muted,tailored,prep,office,vintage",159.99,Cole Haan,https://example.com/30
+31,Black Chelsea Boots,shoes,boot,black,neutral,neutral,slim,"minimalist,tailored,going-out,grunge",189.99,Blundstone,https://example.com/31
+32,White Chunky Dunks,shoes,sneaker,white,neutral,neutral,chunky,"bold,relaxed,streetwear,y2k",120.00,Nike,https://example.com/32
+33,Gray Running Shoes,shoes,sneaker,gray,neutral,neutral,athletic,"minimalist,athleisure,gym",129.99,Adidas,https://example.com/33
+34,Camel Leather Sneakers,shoes,sneaker,camel,brown,warm,slim,"muted,tailored,prep,everyday",140.00,Veja,https://example.com/34
+35,Black Techwear Sneakers,shoes,sneaker,black,neutral,neutral,chunky,"bold,relaxed,techwear,going-out",180.00,Salomon,https://example.com/35
+36,Cream Overshirt,outerwear,overshirt,cream,warm-white,warm,relaxed,"minimalist,muted,relaxed,workwear,everyday",95.00,Everlane,https://example.com/36
+37,Olive Bomber Jacket,outerwear,bomber,olive,green,warm,relaxed,"muted,relaxed,workwear,streetwear,everyday",149.99,Alpha Industries,https://example.com/37
+38,Navy Unstructured Blazer,outerwear,blazer,navy,blue,cool,slim,"minimalist,tailored,prep,office",199.99,J.Crew,https://example.com/38
+39,Camel Topcoat,outerwear,coat,camel,brown,warm,slim,"muted,tailored,prep,office,vintage",299.99,COS,https://example.com/39
+40,Black Denim Jacket,outerwear,denim-jacket,black,neutral,neutral,slim,"minimalist,tailored,everyday,vintage",89.99,Levi's,https://example.com/40
+41,Gray Zip Hoodie,outerwear,hoodie,gray,neutral,neutral,relaxed,"minimalist,relaxed,athleisure,everyday",59.99,Nike,https://example.com/41
+42,Rust Field Jacket,outerwear,jacket,rust,orange,warm,relaxed,"bold,relaxed,workwear,vintage",179.99,Filson,https://example.com/42
+43,Charcoal Overcoat,outerwear,coat,charcoal,gray,neutral,slim,"minimalist,tailored,office,going-out",249.99,COS,https://example.com/43
+44,Black Techwear Shell,outerwear,jacket,black,neutral,neutral,relaxed,"bold,relaxed,techwear",220.00,ACRONYM,https://example.com/44
