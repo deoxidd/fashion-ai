@@ -69,7 +69,7 @@ def analyze_image(image_bytes, gender_pref):
     image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     height, width = image.shape[:2]
     
-    with mp_pose.Pose(static_image_mode=True, model_complexity=2) as pose:
+    with mp_pose.Pose(static_image_mode=True, model_complexity=1) as pose:
         results = pose.process(image_rgb)
     
     if not results.pose_landmarks:
