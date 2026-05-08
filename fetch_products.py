@@ -4,6 +4,21 @@ import time
 
 STORES = [
     {
+        "name": "Vrai",
+        "url": "https://www.vrai.com/products.json",
+        "default_undertone": "cool"
+    },
+    {
+        "name": "Catbird",
+        "url": "https://www.catbirdnyc.com/products.json",
+        "default_undertone": "warm"
+    },
+    {
+        "name": "Miansai",
+        "url": "https://www.miansai.com/products.json",
+        "default_undertone": "warm"
+    },
+    {
         "name": "Taylor Stitch",
         "url": "https://www.taylorstitch.com/products.json",
         "default_undertone": "warm"
@@ -85,11 +100,15 @@ def detect_gender(product_name, product_type, vendor=""):
     
     womens_keywords = [
         "women", "women's", "womens", "ladies", "her", "girls",
-        "skirt", "dress", "blouse", "bra", "leggings",
-        "tankini", "bikini", "midi", "maxi", "mini dress",
+        "skirt", "dress", "blouse", "leggings",
+        "tankini", "bikini", "midi", "mini dress",
         "hourglass", "fit and flare", "wrap dress", "bodysuit",
-        "halter", "camisole", "peplum", "kimono"
+        "halter", "camisole", "peplum", "kimono",
+        "earring", "earrings", "stud", "hoop", "anklet",
+        "delicate", "dainty", "feminine"
     ]
+    
+    
     
     mens_keywords = [
         "men", "men's", "mens", "him", "guys",
@@ -160,7 +179,9 @@ def detect_category(product_type, product_name):
         return "eyewear"
     
     # Jewelry
-    if any(w in text for w in ["bracelet", "necklace", "ring ", "rings", "chain", "pendant", "earring"]):
+    if any(w in text for w in ["bracelet", "necklace", "ring ", "rings", "chain", "pendant", 
+                                "earring", "earrings", "stud", "hoop", "choker", "anklet",
+                                "cuff", "signet", "charm", "brooch"]):
         return "jewelry"
     
     # Watches
