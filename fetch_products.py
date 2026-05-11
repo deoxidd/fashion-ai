@@ -47,7 +47,17 @@ STORES = [
         "name": "Ten Thousand",
         "url": "https://www.tenthousand.cc/products.json",
         "default_undertone": "neutral"
-    }
+    },
+    {
+        "name": "Mister SFC",
+        "url": "https://mistersfc.com/products.json",
+        "default_undertone": "warm"
+    },
+    {
+        "name": "Vitaly",
+        "url": "https://vitaly.com/products.json",
+        "default_undertone": "neutral"
+    },
 ]
 
 PRODUCTS_PER_STORE = 80

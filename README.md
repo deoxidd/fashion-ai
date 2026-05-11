@@ -1,31 +1,43 @@
-# Fashion AI
+# Stylr AI
 
-AI-powered personal stylist that analyzes body shape and skin tone to recommend real clothing from real retailers.
+Personal stylist powered by computer vision. Analyzes your body shape and skin tone, then recommends real clothing from real retailers that work for YOUR specific frame.
 
 ## What It Does
 
 1. Upload a full-body photo
-2. Computer vision detects body proportions and skin undertone
-3. Pick style tags that describe your taste
-4. Get personalized recommendations with shoppable links to real products
+2. AI analyzes your body proportions (shape, frame, proportion)
+3. AI detects your skin tone undertone (warm/cool/neutral)
+4. Pick style tags that describe your taste
+5. Get personalized recommendations with shoppable links
+
+Built around you. Built around your style.
 
 ## Tech Stack
 
-- **Python** — backend logic
+- **Python + Streamlit** — web app
 - **MediaPipe** — body landmark detection
-- **OpenCV** — image processing and skin tone analysis
-- **Streamlit** — web UI
-- **Shopify Product APIs** — real product catalog (Taylor Stitch, Outerknown, Stussy, Aimé Leon Dore, Saturdays NYC, Ten Thousand)
+- **OpenCV** — image processing + skin tone analysis  
+- **Shopify Product APIs** — real product catalog (Taylor Stitch, Outerknown, Stussy, Aimé Leon Dore, Miansai, Saturdays NYC, Ten Thousand)
 
 ## How It Works
 
-The body analysis uses MediaPipe to extract 33 anatomical landmarks. Body shape is classified by shoulder-to-hip ratio. Skin undertone is extracted from the neck region in LAB color space.
+Body analysis uses MediaPipe to extract 33 anatomical landmarks. Body shape classification is based on shoulder-to-hip ratio (men's: Inverted Triangle, Triangle, Rectangle; women's: Hourglass, Pear, Inverted Triangle, Rectangle). Skin undertone is extracted from the neck region in LAB color space.
 
 The matching engine scores each product on three weighted factors:
 - Body shape compatibility (35%)
 - Color undertone match (30%)
 - Style tag overlap (35%)
 
+Accessories use a custom scoring (45% undertone, 55% tags, no fit penalty).
+
 ## Status
 
-MVP. Built solo as a learning project.
+MVP. Live at `dylan-fashion-ai.streamlit.app`. Catalog: 500+ products from 7 brands.
+
+## Roadmap
+
+- Affiliate network integration (Skimlinks, Awin) — unlocks major retailers
+- Better gender detection using brand-level rules
+- Outfit builder (combines top + bottom + shoes into cohesive looks)
+- Mobile-responsive design
+- iOS app version

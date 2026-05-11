@@ -7,8 +7,8 @@ import csv
 import os
 
 st.set_page_config(
-    page_title="Fashion AI",
-    page_icon="👔",
+    page_title="Stylr AI",
+    page_icon="✨",
     layout="wide"
 )
 
@@ -54,8 +54,8 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<h1 class="main-title">Fashion AI</h1>', unsafe_allow_html=True)
-st.markdown('<p class="subtitle">Personal stylist powered by computer vision</p>', unsafe_allow_html=True)
+st.markdown('<h1 class="main-title">Stylr AI</h1>', unsafe_allow_html=True)
+st.markdown('<p class="subtitle">Built around you. Built around your style.</p>', unsafe_allow_html=True)
 
 mp_pose = mp.solutions.pose
 
