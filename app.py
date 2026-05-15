@@ -5,6 +5,7 @@ import numpy as np
 import math
 import csv
 import os
+import time
 
 st.set_page_config(
     page_title="Stylr AI",
@@ -51,6 +52,20 @@ st.markdown("""
         font-weight: 600;
         display: inline-block;
     }
+    .help-box {
+        background: #1a1a1a;
+        padding: 1rem;
+        border-radius: 8px;
+        border-left: 3px solid #667eea;
+        margin: 1rem 0;
+    }
+    .error-box {
+        background: #2a1a1a;
+        padding: 1.5rem;
+        border-radius: 12px;
+        border: 1px solid #663333;
+        margin: 1rem 0;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -60,22 +75,57 @@ st.markdown('<p class="subtitle">Built around you. Built around your style.</p>'
 mp_pose = mp.solutions.pose
 
 
-def analyze_image(image_bytes, gender_pref):
-    nparr = np.frombuffer(image_bytes, np.uint8)
-    image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-    if image is None:
-        return None
+def analyze_image(image_bytes, gender_pref, progress_callback=None):
+    """Returns (profile, error_message) tuple. profile is None on error."""
+    
+    if progress_callback:
+        progress_callback("Loading image...")
+    
+    try:
+        nparr = np.frombuffer(image_bytes, np.uint8)
+        image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        if image is None:
+            return None, "Could not read the image file. Please try a different photo (JPG, PNG, or WebP)."
+    except Exception as e:
+        return None, f"Image loading failed. Try a different photo. Error: {str(e)[:100]}"
     
     image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     height, width = image.shape[:2]
     
-    with mp_pose.Pose(static_image_mode=True, model_complexity=1) as pose:
-        results = pose.process(image_rgb)
+    # Check if image is too small
+    if height < 400 or width < 200:
+        return None, "Photo is too small for accurate analysis. Try a larger photo (at least 400px tall)."
+    
+    if progress_callback:
+        progress_callback("Detecting body landmarks...")
+    
+    try:
+        with mp_pose.Pose(static_image_mode=True, model_complexity=1) as pose:
+            results = pose.process(image_rgb)
+    except Exception as e:
+        return None, f"Body detection failed. Try a clearer photo with the full body visible. Error: {str(e)[:100]}"
     
     if not results.pose_landmarks:
-        return None
+        return None, "Could not detect a body in this photo. Tips:\n• Stand facing the camera\n• Make sure your full body is visible (head to feet)\n• Use good lighting\n• Wear contrasting clothes from background\n• Avoid cropped photos"
     
     landmarks = results.pose_landmarks.landmark
+    
+    # Check visibility of key landmarks
+    key_landmarks_visibility = [
+        landmarks[11].visibility,  # left shoulder
+        landmarks[12].visibility,  # right shoulder
+        landmarks[23].visibility,  # left hip
+        landmarks[24].visibility,  # right hip
+        landmarks[27].visibility,  # left ankle
+    ]
+    
+    avg_visibility = sum(key_landmarks_visibility) / len(key_landmarks_visibility)
+    
+    if avg_visibility < 0.3:
+        return None, "Could not see your full body clearly. Tips:\n• Take a full-body photo (head to feet)\n• Stand facing the camera\n• Make sure shoulders, hips, and feet are all visible\n• Use good lighting"
+    
+    if progress_callback:
+        progress_callback("Analyzing body shape...")
     
     def distance(p1, p2):
         return math.sqrt((p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2)
@@ -102,6 +152,10 @@ def analyze_image(image_bytes, gender_pref):
     hip_width = distance(left_hip, right_hip)
     torso_length = distance(midpoint(left_shoulder, right_shoulder), midpoint(left_hip, right_hip))
     leg_length = distance(left_hip, left_ankle)
+    
+    # Sanity check
+    if shoulder_width == 0 or hip_width == 0 or leg_length == 0:
+        return None, "Could not measure body proportions. Try a different photo where your body is more centered and visible."
     
     shoulder_to_hip_ratio = shoulder_width / hip_width
     torso_to_leg_ratio = torso_length / leg_length
@@ -130,45 +184,63 @@ def analyze_image(image_bytes, gender_pref):
     else:
         proportion = "Balanced"
     
-    neck_center = Point()
-    neck_center.x = (left_shoulder.x + right_shoulder.x) / 2
-    mouth_y = (mouth_left.y + mouth_right.y) / 2
-    shoulder_y = (left_shoulder.y + right_shoulder.y) / 2
-    neck_center.y = mouth_y + (shoulder_y - mouth_y) * 0.4
+    if progress_callback:
+        progress_callback("Analyzing skin tone...")
     
-    samples = []
-    for x_offset in [-0.03, 0, 0.03]:
-        x = int((neck_center.x + x_offset) * width)
-        y = int(neck_center.y * height)
-        patch_size = 12
-        x1, y1 = max(0, x - patch_size), max(0, y - patch_size)
-        x2, y2 = min(width, x + patch_size), min(height, y + patch_size)
-        patch = image_rgb[y1:y2, x1:x2]
-        samples.append(np.mean(patch, axis=(0, 1)))
+    # Skin tone analysis with error handling
+    try:
+        neck_center = Point()
+        neck_center.x = (left_shoulder.x + right_shoulder.x) / 2
+        mouth_y = (mouth_left.y + mouth_right.y) / 2
+        shoulder_y = (left_shoulder.y + right_shoulder.y) / 2
+        neck_center.y = mouth_y + (shoulder_y - mouth_y) * 0.4
+        
+        samples = []
+        for x_offset in [-0.03, 0, 0.03]:
+            x = int((neck_center.x + x_offset) * width)
+            y = int(neck_center.y * height)
+            patch_size = 12
+            x1, y1 = max(0, x - patch_size), max(0, y - patch_size)
+            x2, y2 = min(width, x + patch_size), min(height, y + patch_size)
+            patch = image_rgb[y1:y2, x1:x2]
+            if patch.size > 0:
+                samples.append(np.mean(patch, axis=(0, 1)))
+        
+        if not samples:
+            return None, "Could not sample skin tone. Try a photo where your neck is visible."
+        
+        avg_skin_rgb = np.mean(samples, axis=0)
+        rgb_pixel = np.uint8([[avg_skin_rgb]])
+        lab_pixel = cv2.cvtColor(rgb_pixel, cv2.COLOR_RGB2LAB)[0][0]
+        L, a, b = lab_pixel
+        
+        if L < 80:
+            depth = "Deep"
+        elif L < 130:
+            depth = "Medium"
+        elif L < 180:
+            depth = "Light-Medium"
+        else:
+            depth = "Light"
+        
+        warm_score = int(b) - 128
+        cool_score = int(a) - 128
+        
+        if warm_score > cool_score + 3:
+            undertone = "Warm"
+        elif cool_score > warm_score + 3:
+            undertone = "Cool"
+        else:
+            undertone = "Neutral"
     
-    avg_skin_rgb = np.mean(samples, axis=0)
-    rgb_pixel = np.uint8([[avg_skin_rgb]])
-    lab_pixel = cv2.cvtColor(rgb_pixel, cv2.COLOR_RGB2LAB)[0][0]
-    L, a, b = lab_pixel
-    
-    if L < 80:
-        depth = "Deep"
-    elif L < 130:
+    except Exception as e:
+        # Skin tone failed, use neutral default
         depth = "Medium"
-    elif L < 180:
-        depth = "Light-Medium"
-    else:
-        depth = "Light"
-    
-    warm_score = int(b) - 128
-    cool_score = int(a) - 128
-    
-    if warm_score > cool_score + 3:
-        undertone = "Warm"
-    elif cool_score > warm_score + 3:
-        undertone = "Cool"
-    else:
         undertone = "Neutral"
+        avg_skin_rgb = [128, 128, 128]
+    
+    if progress_callback:
+        progress_callback("Done!")
     
     return {
         "body_shape": body_shape,
@@ -178,7 +250,7 @@ def analyze_image(image_bytes, gender_pref):
         "undertone": undertone,
         "skin_rgb": [int(avg_skin_rgb[0]), int(avg_skin_rgb[1]), int(avg_skin_rgb[2])],
         "gender_pref": gender_pref
-    }
+    }, None
 
 
 fit_scores = {
@@ -204,7 +276,6 @@ fit_scores = {
     }
 }
 
-# Categories where fit doesn't apply (accessories)
 ACCESSORY_CATEGORIES = {"hats", "eyewear", "jewelry", "watches", "bags", "belts"}
 
 
@@ -240,7 +311,6 @@ def score_item(item, profile, user_tags):
     undertone = profile["undertone"]
     category = item.get("category", "")
     
-    # For accessories, fit is always 100 (doesn't apply)
     if category in ACCESSORY_CATEGORIES:
         fit_score = 100
     else:
@@ -250,7 +320,6 @@ def score_item(item, profile, user_tags):
     tags_to_use = item.get("ai_tags") or item.get("tags", "")
     tag_score = score_tags(tags_to_use, user_tags)
     
-    # Different weighting for accessories (more weight on color + style, no fit penalty)
     if category in ACCESSORY_CATEGORIES:
         final_score = (undertone_score * 0.45) + (tag_score * 0.55)
     else:
@@ -308,7 +377,19 @@ if st.session_state.step == "gender":
 elif st.session_state.step == "upload":
     pref_label = {"mens": "Men's", "womens": "Women's", "all": "Both / Unisex"}[st.session_state.gender_pref]
     st.markdown(f"### Step 2: Upload a full-body photo")
-    st.caption(f"Style: {pref_label} · Stand facing camera, full body visible, good lighting")
+    st.caption(f"Style: {pref_label}")
+    
+    # Helpful instructions
+    st.markdown("""
+    <div class="help-box">
+    <b>For best results:</b><br>
+    • Full body in frame (head to feet)<br>
+    • Stand facing the camera<br>
+    • Good lighting (natural light works great)<br>
+    • Solid background helps<br>
+    • JPG, PNG, or WebP format
+    </div>
+    """, unsafe_allow_html=True)
     
     uploaded_file = st.file_uploader("Choose a photo", type=["jpg", "jpeg", "png", "webp"])
     
@@ -318,16 +399,35 @@ elif st.session_state.step == "upload":
             st.image(uploaded_file, caption="Your photo", use_container_width=True)
         
         with col2:
-            st.markdown("### Analyzing...")
-            with st.spinner("Running body + skin analysis..."):
-                image_bytes = uploaded_file.read()
-                profile = analyze_image(image_bytes, st.session_state.gender_pref)
+            # Progress placeholder for live updates
+            status_placeholder = st.empty()
+            spinner_placeholder = st.empty()
             
-            if profile is None:
-                st.error("Could not detect a body. Try a clearer full-body photo.")
+            with spinner_placeholder:
+                with st.spinner("Analyzing..."):
+                    image_bytes = uploaded_file.read()
+                    
+                    # Use status_placeholder for step-by-step updates
+                    def update_status(msg):
+                        status_placeholder.info(f"⚙️ {msg}")
+                    
+                    profile, error_msg = analyze_image(image_bytes, st.session_state.gender_pref, update_status)
+            
+            status_placeholder.empty()
+            spinner_placeholder.empty()
+            
+            if error_msg:
+                st.markdown(f"""
+                <div class="error-box">
+                <h4 style="color: #ff6b6b;">⚠️ Analysis Failed</h4>
+                <p style="white-space: pre-line;">{error_msg}</p>
+                </div>
+                """, unsafe_allow_html=True)
+            elif profile is None:
+                st.error("Something went wrong. Try a different photo.")
             else:
                 st.session_state.profile = profile
-                st.success("Analysis complete!")
+                st.success("✅ Analysis complete!")
                 
                 st.markdown(f"""
                 <div class="profile-card">
@@ -410,72 +510,90 @@ elif st.session_state.step == "results":
     catalog_file = "smart_catalog.csv" if os.path.exists("smart_catalog.csv") else "real_catalog.csv"
     
     if not os.path.exists(catalog_file):
-        st.error("No catalog found. Run fetch_products.py first.")
+        st.markdown("""
+        <div class="error-box">
+        <h4 style="color: #ff6b6b;">⚠️ Catalog Not Available</h4>
+        <p>Product catalog is missing. This is a server-side issue. Please try again in a few minutes or contact support.</p>
+        </div>
+        """, unsafe_allow_html=True)
     else:
-        catalog = []
-        with open(catalog_file, "r", encoding="utf-8") as f:
-            reader = csv.DictReader(f)
-            catalog = list(reader)
+        try:
+            catalog = []
+            with open(catalog_file, "r", encoding="utf-8") as f:
+                reader = csv.DictReader(f)
+                catalog = list(reader)
+        except Exception as e:
+            st.error(f"Could not load catalog. Try refreshing the page. Error: {str(e)[:100]}")
+            catalog = []
         
-        if gender_pref == "mens":
-            catalog = [item for item in catalog if item.get("gender") in ("mens", "unisex")]
-        elif gender_pref == "womens":
-            catalog = [item for item in catalog if item.get("gender") in ("womens", "unisex")]
-        
-        scored_items = []
-        for item in catalog:
-            score, reasons = score_item(item, profile, user_tags)
-            scored_items.append({**item, "score": score, "reasons": reasons})
-        
-        scored_items.sort(key=lambda x: x["score"], reverse=True)
-        
-        # Order: clothing first, then accessories
-        category_order = ["tops", "bottoms", "outerwear", "shoes", "hats", "eyewear", "watches", "jewelry", "bags", "belts"]
-        category_labels = {
-            "tops": "TOPS",
-            "bottoms": "BOTTOMS",
-            "outerwear": "OUTERWEAR",
-            "shoes": "SHOES",
-            "hats": "HATS",
-            "eyewear": "EYEWEAR",
-            "watches": "WATCHES",
-            "jewelry": "JEWELRY",
-            "bags": "BAGS",
-            "belts": "BELTS"
-        }
-        
-        for category in category_order:
-            cat_items = [i for i in scored_items if i["category"] == category]
-            top_3 = cat_items[:3]
+        if not catalog:
+            st.warning("No products available right now. Please try again later.")
+        else:
+            if gender_pref == "mens":
+                catalog = [item for item in catalog if item.get("gender") in ("mens", "unisex")]
+            elif gender_pref == "womens":
+                catalog = [item for item in catalog if item.get("gender") in ("womens", "unisex")]
             
-            if not top_3:
-                continue
+            scored_items = []
+            for item in catalog:
+                try:
+                    score, reasons = score_item(item, profile, user_tags)
+                    scored_items.append({**item, "score": score, "reasons": reasons})
+                except Exception:
+                    continue  # Skip items that fail to score
             
-            st.markdown(f"#### {category_labels[category]}")
-            cols = st.columns(3)
+            scored_items.sort(key=lambda x: x["score"], reverse=True)
             
-            for i, item in enumerate(top_3):
-                with cols[i]:
-                    st.markdown(f'<div class="product-card">', unsafe_allow_html=True)
-                    
-                    image_url = item.get("image_url", "").strip()
-                    if image_url and image_url.startswith("http"):
-                        try:
-                            st.image(image_url, use_container_width=True)
-                        except Exception:
+            category_order = ["tops", "bottoms", "outerwear", "shoes", "hats", "eyewear", "watches", "jewelry", "bags", "belts"]
+            category_labels = {
+                "tops": "TOPS", "bottoms": "BOTTOMS", "outerwear": "OUTERWEAR",
+                "shoes": "SHOES", "hats": "HATS", "eyewear": "EYEWEAR",
+                "watches": "WATCHES", "jewelry": "JEWELRY", "bags": "BAGS", "belts": "BELTS"
+            }
+            
+            categories_shown = 0
+            for category in category_order:
+                cat_items = [i for i in scored_items if i["category"] == category]
+                top_3 = cat_items[:3]
+                
+                if not top_3:
+                    continue
+                
+                categories_shown += 1
+                st.markdown(f"#### {category_labels[category]}")
+                cols = st.columns(3)
+                
+                for i, item in enumerate(top_3):
+                    with cols[i]:
+                        st.markdown(f'<div class="product-card">', unsafe_allow_html=True)
+                        
+                        image_url = item.get("image_url", "").strip()
+                        if image_url and image_url.startswith("http"):
+                            try:
+                                st.image(image_url, use_container_width=True)
+                            except Exception:
+                                st.markdown("📦 *(image unavailable)*")
+                        else:
                             st.markdown("📦 *(no image)*")
-                    else:
-                        st.markdown("📦 *(no image)*")
-                    
-                    st.markdown(f"**{item['name'][:50]}**")
-                    st.markdown(f"${item['price']} · {item['brand']}")
-                    st.markdown(f'<span class="score-badge">{item["score"]}/100</span>', unsafe_allow_html=True)
-                    
-                    reasons_text = " · ".join(item["reasons"]) if item["reasons"] else "decent match"
-                    st.caption(reasons_text)
-                    
-                    st.link_button("View Product", item["url"])
-                    st.markdown('</div>', unsafe_allow_html=True)
+                        
+                        st.markdown(f"**{item['name'][:50]}**")
+                        st.markdown(f"${item.get('price', 'N/A')} · {item.get('brand', 'Unknown')}")
+                        st.markdown(f'<span class="score-badge">{item["score"]}/100</span>', unsafe_allow_html=True)
+                        
+                        reasons_text = " · ".join(item["reasons"]) if item["reasons"] else "decent match"
+                        st.caption(reasons_text)
+                        
+                        if item.get("url"):
+                            st.link_button("View Product", item["url"])
+                        st.markdown('</div>', unsafe_allow_html=True)
+            
+            if categories_shown == 0:
+                st.markdown("""
+                <div class="error-box">
+                <h4 style="color: #ff6b6b;">No matches found</h4>
+                <p>Try selecting different style tags or switching to "Both / Unisex" for more options.</p>
+                </div>
+                """, unsafe_allow_html=True)
     
     st.markdown("---")
     col1, col2, col3 = st.columns(3)
