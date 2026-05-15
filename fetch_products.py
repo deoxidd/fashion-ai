@@ -4,16 +4,6 @@ import time
 
 STORES = [
     {
-        "name": "Vrai",
-        "url": "https://www.vrai.com/products.json",
-        "default_undertone": "cool"
-    },
-    {
-        "name": "Catbird",
-        "url": "https://www.catbirdnyc.com/products.json",
-        "default_undertone": "warm"
-    },
-    {
         "name": "Miansai",
         "url": "https://www.miansai.com/products.json",
         "default_undertone": "warm"
@@ -47,17 +37,7 @@ STORES = [
         "name": "Ten Thousand",
         "url": "https://www.tenthousand.cc/products.json",
         "default_undertone": "neutral"
-    },
-    {
-        "name": "Mister SFC",
-        "url": "https://mistersfc.com/products.json",
-        "default_undertone": "warm"
-    },
-    {
-        "name": "Vitaly",
-        "url": "https://vitaly.com/products.json",
-        "default_undertone": "neutral"
-    },
+    }
 ]
 
 PRODUCTS_PER_STORE = 80
@@ -108,30 +88,49 @@ def infer_tags(product_name, product_type, product_description):
 def detect_gender(product_name, product_type, vendor=""):
     text = f"{product_name} {product_type} {vendor}".lower()
     
-    womens_keywords = [
-        "women", "women's", "womens", "ladies", "her", "girls",
-        "skirt", "dress", "blouse", "leggings",
-        "tankini", "bikini", "midi", "mini dress",
-        "hourglass", "fit and flare", "wrap dress", "bodysuit",
-        "halter", "camisole", "peplum", "kimono",
+    # Strong women's overrides (most specific)
+    womens_overrides = [
+        "women", "women's", "womens", "ladies",
+        "skirt", "dress", "blouse", "bra", "leggings",
+        "tankini", "bikini", "midi", "maxi", "mini dress",
+        "wrap dress", "bodysuit", "halter", "camisole", "peplum", "kimono",
         "earring", "earrings", "stud", "hoop", "anklet",
-        "delicate", "dainty", "feminine"
+        "delicate", "dainty", "feminine", "tennis bracelet",
+        "pearl", "huggie", "ear cuff", "drop earring"
     ]
     
-    
-    
-    mens_keywords = [
-        "men", "men's", "mens", "him", "guys",
-        "boxer", "boxer brief", "boxers"
-    ]
-    
-    for kw in womens_keywords:
+    for kw in womens_overrides:
         if kw in text:
             return "womens"
     
-    for kw in mens_keywords:
+    # Strong men's overrides
+    mens_overrides = [
+        "men's", "mens",
+        "boxer", "boxer brief", "boxers",
+        "id bracelet", "cuban", "figaro", "rope chain",
+        "signet", "thick chain", "heavy chain", "wide cuff",
+        "leather bracelet", "cord bracelet", "rugged"
+    ]
+    
+    for kw in mens_overrides:
         if kw in text:
             return "mens"
+    
+    # Brand-level defaults
+    brand_defaults = {
+        "taylor stitch": "mens",
+        "outerknown": "mens",
+        "saturdays nyc": "mens",
+        "aime leon dore": "mens",
+        "ten thousand": "mens",
+        "stussy": "unisex",
+        "miansai": "unisex"
+    }
+    
+    vendor_lower = vendor.lower()
+    for brand, gender in brand_defaults.items():
+        if brand in vendor_lower or brand in text:
+            return gender
     
     return "unisex"
 
@@ -169,6 +168,25 @@ COLOR_MAP = {
 }
 
 
+def detect_jewelry_metal(product_name, variant_title=""):
+    """Detect metal type for jewelry, returns (color, family, undertone) or None."""
+    text = f"{product_name} {variant_title}".lower()
+    
+    if any(w in text for w in ["gold", "yellow gold", "rose gold", "brass", "bronze", "copper", "vermeil"]):
+        return ("gold", "yellow", "warm")
+    
+    if any(w in text for w in ["silver", "sterling", "platinum", "white gold", "stainless"]):
+        return ("silver", "neutral", "cool")
+    
+    if any(w in text for w in ["pearl", "ivory"]):
+        return ("pearl", "neutral", "cool")
+    
+    if any(w in text for w in ["black", "onyx", "obsidian"]):
+        return ("black", "neutral", "neutral")
+    
+    return None
+
+
 def detect_color(product_name, variant_title=""):
     text = f"{product_name} {variant_title}".lower()
     for keyword, (color, family, undertone) in COLOR_MAP.items():
@@ -194,13 +212,12 @@ def detect_category(product_type, product_name):
                                 "cuff", "signet", "charm", "brooch"]):
         return "jewelry"
     
-    # Watches
-    # More specific watch detection (avoid "blackwatch" tartan pattern + "watch" pullover)
+    # Watches (smarter detection to avoid "blackwatch" tartan + "watch" pullover)
     if any(w in text for w in ["wristwatch", "timepiece"]):
         return "watches"
-    # "watch" alone only if NOT followed by clothing words
     if "watch" in text and not any(w in text for w in ["watch pullover", "watch jacket", "watch shirt", "blackwatch", "watch knit"]):
         return "watches"
+    
     # Bags
     if any(w in text for w in ["bag", "tote", "backpack", "crossbody", "duffle", "duffel", "pouch", "fanny", "messenger"]):
         return "bags"
@@ -285,7 +302,7 @@ def fetch_store(store):
                 name = product.get("title", "")
                 product_type = product.get("product_type", "")
                 description = (product.get("body_html") or "")[:500]
-                vendor = product.get("vendor", "")
+                vendor = product.get("vendor", "") or store["name"]
                 
                 category = detect_category(product_type, name)
                 if not category:
@@ -293,7 +310,16 @@ def fetch_store(store):
                 
                 variant = variants[0]
                 variant_title = variant.get("title", "")
-                color, color_family, undertone = detect_color(name, variant_title)
+                
+                # For jewelry, prioritize metal detection
+                if category == "jewelry":
+                    metal_result = detect_jewelry_metal(name, variant_title)
+                    if metal_result:
+                        color, color_family, undertone = metal_result
+                    else:
+                        color, color_family, undertone = detect_color(name, variant_title)
+                else:
+                    color, color_family, undertone = detect_color(name, variant_title)
                 
                 if color == "unknown":
                     continue
