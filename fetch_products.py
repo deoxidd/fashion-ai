@@ -195,9 +195,12 @@ def detect_category(product_type, product_name):
         return "jewelry"
     
     # Watches
-    if any(w in text for w in ["watch", "wristwatch", "timepiece"]):
+    # More specific watch detection (avoid "blackwatch" tartan pattern + "watch" pullover)
+    if any(w in text for w in ["wristwatch", "timepiece"]):
         return "watches"
-    
+    # "watch" alone only if NOT followed by clothing words
+    if "watch" in text and not any(w in text for w in ["watch pullover", "watch jacket", "watch shirt", "blackwatch", "watch knit"]):
+        return "watches"
     # Bags
     if any(w in text for w in ["bag", "tote", "backpack", "crossbody", "duffle", "duffel", "pouch", "fanny", "messenger"]):
         return "bags"
